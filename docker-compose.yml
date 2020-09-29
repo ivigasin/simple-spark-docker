@@ -1,26 +1,45 @@
-version: "3"
-
+version: "3.3"
 services:
   hive:
+    container_name: hive_container
     build: .
     entrypoint: /init-hive.sh
     ports:
       - "9083:9083"
       - "10000:10000"
-    links:
-      - "postgres:postgres"
-
+    networks:
+      cluster-network:
+        aliases:
+          - hive                      
+    depends_on:
+      - postgres
   spark:
+    container_name: spark_container
     build: .
     entrypoint: /init-spark.sh
     ports:
       - "10001:10001"
-    links:
-      - "postgres:postgres"
-      - "hive:hive"
-
+    depends_on:
+      - postgres
+      - hive
+    networks:
+      cluster-network:
+        aliases:
+        - spark
   postgres:
     image: postgres:10
     environment:
       - POSTGRES_USER=hive
+      - POSTGRES_PASSWORD=hive  
       - POSTGRES_DB=metastore
+    networks:
+      cluster-network:
+        aliases:
+          - postgres
+
+networks:
+  cluster-network:
+    driver: bridge
+    ipam:
+      driver: default
+
